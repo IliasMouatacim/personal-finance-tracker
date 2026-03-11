@@ -2,7 +2,7 @@ services:
   - type: web
     name: finance-tracker-api
     runtime: node
-    buildCommand: npm install && npm run build:server
+    buildCommand: npm install --include=dev && npm run build:server
     startCommand: npm run start:server
     healthCheckPath: /api/health
     envVars:
@@ -14,5 +14,3 @@ services:
         generateValue: true  # Render auto-generates a secure random value
       - key: CORS_ORIGIN
         sync: false   # Set this to your Vercel URL e.g. https://your-app.vercel.app
-      - key: PORT
-        value: 10000  # Render assigns port 10000 by default
