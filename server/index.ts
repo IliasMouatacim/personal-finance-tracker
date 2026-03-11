@@ -12,9 +12,26 @@ const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:3000';
 
 app.use(cors({
   origin: (origin, callback) => {
-    const allowed = CORS_ORIGIN.split(',').map(o => o.trim());
-    if (!origin || allowed.includes(origin)) return callback(null, true);
-    callback(new Error('Not allowed by CORS'));
+    const normalizedOrigin = origin?.trim().replace(/\/$/, '');
+    const allowed = CORS_ORIGIN
+      .split(',')
+      .map((o) => o.trim().replace(/\/$/, ''))
+      .filter(Boolean);
+
+    if (!normalizedOrigin) {
+      callback(null, true);
+      return;
+    }
+
+    const isAllowedConfigured = allowed.includes(normalizedOrigin);
+    const isVercelDomain = /\.vercel\.app$/i.test(new URL(normalizedOrigin).hostname);
+
+    if (isAllowedConfigured || isVercelDomain) {
+      callback(null, true);
+      return;
+    }
+
+    callback(null, false);
   },
   credentials: true,
 }));
