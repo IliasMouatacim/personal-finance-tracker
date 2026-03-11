@@ -12,11 +12,11 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@types/mongodb": "^4.0.6",
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
+    "@types/mongodb": "^4.0.6",
     "@types/node": "^20",
     "bcryptjs": "^3.0.3",
     "chart.js": "^4.5.1",
@@ -36,6 +36,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
+    "mongodb-memory-server": "^11.0.1",
     "tailwindcss": "^4",
     "ts-node": "^10.9.2"
   }
