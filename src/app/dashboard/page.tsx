@@ -58,32 +58,46 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50">
-        <div className="text-gray-500 text-lg animate-pulse">Loading your finances...</div>
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+          <div className="text-gray-600 font-medium">Loading your finances...</div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Background blobs for dashboard */}
+      <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-blue-400/10 blur-[100px] pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-indigo-500/10 blur-[100px] pointer-events-none" />
+
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">💰 Finance Tracker</h1>
-            {user && <p className="text-sm text-gray-500 mt-0.5">{user.email}</p>}
+      <header className="bg-white/60 backdrop-blur-lg border-b border-white/40 sticky top-0 z-50 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-white text-xl shadow-md">
+              💰
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-700">
+                Finance Tracker
+              </h1>
+              {user && <p className="text-sm font-medium text-gray-500">{user.email}</p>}
+            </div>
           </div>
           <div className="flex items-center gap-3">
             <button
               onClick={handleExport}
               disabled={exporting || transactions.length === 0}
-              className="flex items-center gap-2 rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-500 disabled:opacity-50 transition-colors"
+              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-md hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-50 transition-all duration-200 disabled:hover:translate-y-0"
             >
               {exporting ? 'Exporting...' : '⬇ Export CSV'}
             </button>
             <button
               onClick={logout}
-              className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
+              className="rounded-xl border-2 border-indigo-100 bg-white/50 backdrop-blur-sm px-4 py-2.5 text-sm font-bold text-indigo-700 hover:bg-white/80 transition-all duration-200 hover:-translate-y-0.5"
             >
               Sign Out
             </button>
@@ -91,42 +105,57 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 relative z-10 animate-fade-in-up">
         {/* Summary Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <p className="text-sm text-gray-500 font-medium">Total Balance</p>
-            <p className={`text-3xl font-bold mt-1 ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+          <div className="glass-panel p-6 hover:-translate-y-1 transition-transform duration-300">
+            <p className="text-sm text-gray-500 font-bold uppercase tracking-wider mb-1">Total Balance</p>
+            <p className={`text-4xl font-extrabold ${balance >= 0 ? 'text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-500' : 'text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-pink-500'}`}>
               {balance >= 0 ? '+' : ''}${balance.toFixed(2)}
             </p>
           </div>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <p className="text-sm text-gray-500 font-medium">Total Income</p>
-            <p className="text-3xl font-bold mt-1 text-green-600">+${totalIncome.toFixed(2)}</p>
+          <div className="glass-panel p-6 hover:-translate-y-1 transition-transform duration-300">
+            <p className="text-sm text-gray-500 font-bold uppercase tracking-wider mb-1">Total Income</p>
+            <p className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-green-500">
+              +${totalIncome.toFixed(2)}
+            </p>
           </div>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <p className="text-sm text-gray-500 font-medium">Total Expenses</p>
-            <p className="text-3xl font-bold mt-1 text-red-600">-${totalExpenses.toFixed(2)}</p>
+          <div className="glass-panel p-6 hover:-translate-y-1 transition-transform duration-300">
+            <p className="text-sm text-gray-500 font-bold uppercase tracking-wider mb-1">Total Expenses</p>
+            <p className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-pink-500">
+              -${totalExpenses.toFixed(2)}
+            </p>
           </div>
         </div>
 
         {/* Main Content */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Add Transaction</h2>
+          <div className="glass-panel p-6 xl:p-8">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center text-indigo-600 text-lg">📝</div>
+              <h2 className="text-xl font-bold text-gray-900">Add Transaction</h2>
+            </div>
             <TransactionForm onAdded={handleAdded} />
           </div>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Spending Overview</h2>
+          <div className="glass-panel p-6 xl:p-8">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600 text-lg">📈</div>
+              <h2 className="text-xl font-bold text-gray-900">Spending Overview</h2>
+            </div>
             <SpendingChart transactions={transactions} />
           </div>
         </div>
 
         {/* Transaction History */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Transaction History</h2>
-            <span className="text-sm text-gray-400">{transactions.length} transaction{transactions.length !== 1 ? 's' : ''}</span>
+        <div className="glass-panel p-6 xl:p-8">
+          <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200/50">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600 text-lg">📋</div>
+              <h2 className="text-xl font-bold text-gray-900">Transaction History</h2>
+            </div>
+            <span className="inline-flex items-center rounded-full bg-indigo-50 px-3 py-1 text-sm font-semibold text-indigo-700 ring-1 ring-inset ring-indigo-600/20">
+              {transactions.length} record{transactions.length !== 1 ? 's' : ''}
+            </span>
           </div>
           <TransactionList transactions={transactions} onDeleted={handleDeleted} />
         </div>

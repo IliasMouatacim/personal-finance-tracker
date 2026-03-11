@@ -15,10 +15,15 @@ import { Transaction } from '@/lib/api';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
 
-const COLORS = [
-  'rgba(99,102,241,0.8)',  'rgba(236,72,153,0.8)',  'rgba(245,158,11,0.8)',
-  'rgba(16,185,129,0.8)',  'rgba(59,130,246,0.8)',  'rgba(239,68,68,0.8)',
-  'rgba(139,92,246,0.8)',  'rgba(20,184,166,0.8)',
+const PIE_COLORS = [
+  'rgba(99, 102, 241, 0.85)',   // Indigo
+  'rgba(236, 72, 153, 0.85)',   // Pink
+  'rgba(16, 185, 129, 0.85)',   // Emerald
+  'rgba(245, 158, 11, 0.85)',   // Amber
+  'rgba(59, 130, 246, 0.85)',   // Blue
+  'rgba(139, 92, 246, 0.85)',   // Purple
+  'rgba(239, 68, 68, 0.85)',    // Red
+  'rgba(20, 184, 166, 0.85)',   // Teal
 ];
 
 interface Props {
@@ -58,44 +63,122 @@ export default function SpendingChart({ transactions }: Props) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {pieLabels.length > 0 ? (
-        <div>
-          <h3 className="text-sm font-medium text-gray-600 mb-3">Expenses by Category</h3>
-          <div className="max-w-xs mx-auto">
+        <div className="bg-white/40 border border-white/50 rounded-xl p-6 shadow-sm">
+          <h3 className="text-sm font-bold text-gray-700 mb-4 uppercase tracking-wider text-center">Expenses by Category</h3>
+          <div className="max-w-xs mx-auto relative h-64">
             <Pie
               data={{
                 labels: pieLabels,
                 datasets: [{
                   data: pieData,
-                  backgroundColor: COLORS.slice(0, pieLabels.length),
-                  borderWidth: 1,
-                  borderColor: '#fff',
+                  backgroundColor: PIE_COLORS.slice(0, pieLabels.length),
+                  borderWidth: 2,
+                  borderColor: '#ffffff',
+                  hoverOffset: 8,
                 }],
               }}
-              options={{ plugins: { legend: { position: 'bottom' } } }}
+              options={{ 
+                maintainAspectRatio: false,
+                plugins: { 
+                  legend: { 
+                    position: 'bottom',
+                    labels: {
+                      font: { family: "'Inter', sans-serif", size: 12, weight: 'bold' },
+                      usePointStyle: true,
+                      padding: 20
+                    }
+                  },
+                  tooltip: {
+                    backgroundColor: 'rgba(17, 24, 39, 0.8)',
+                    padding: 12,
+                    cornerRadius: 8,
+                    bodyFont: { family: "'Inter', sans-serif" },
+                    titleFont: { family: "'Inter', sans-serif" },
+                    callbacks: {
+                      label: (ctx) => ` $${(ctx.raw as number).toFixed(2)}`
+                    }
+                  }
+                } 
+              }}
             />
           </div>
         </div>
       ) : (
-        <p className="text-center text-sm text-gray-400 py-6">No expense data to display.</p>
+        <p className="text-center text-sm font-medium text-gray-400 py-10 bg-white/30 rounded-xl border border-dashed border-gray-300">
+          No expense data to display.
+        </p>
       )}
-      <div>
-        <h3 className="text-sm font-medium text-gray-600 mb-3">Income vs Expenses (Last 6 Months)</h3>
-        <Bar
-          data={{
-            labels: months,
-            datasets: [
-              { label: 'Income', data: incomeByMonth, backgroundColor: 'rgba(16,185,129,0.7)' },
-              { label: 'Expenses', data: expenseByMonth, backgroundColor: 'rgba(239,68,68,0.7)' },
-            ],
-          }}
-          options={{
-            responsive: true,
-            plugins: { legend: { position: 'bottom' } },
-            scales: { y: { beginAtZero: true, ticks: { callback: (v) => `$${v}` } } },
-          }}
-        />
+      <div className="bg-white/40 border border-white/50 rounded-xl p-6 shadow-sm">
+        <h3 className="text-sm font-bold text-gray-700 mb-6 uppercase tracking-wider">Income vs Expenses (Last 6 Months)</h3>
+        <div className="h-64 relative">
+          <Bar
+            data={{
+              labels: months,
+              datasets: [
+                { 
+                  label: 'Income', 
+                  data: incomeByMonth, 
+                  backgroundColor: 'rgba(16, 185, 129, 0.85)',
+                  borderRadius: 6,
+                  borderSkipped: false,
+                },
+                { 
+                  label: 'Expenses', 
+                  data: expenseByMonth, 
+                  backgroundColor: 'rgba(239, 68, 68, 0.85)',
+                  borderRadius: 6,
+                  borderSkipped: false,
+                },
+              ],
+            }}
+            options={{
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { 
+                legend: { 
+                  position: 'bottom',
+                  labels: {
+                    font: { family: "'Inter', sans-serif", size: 12, weight: 'bold' },
+                    usePointStyle: true,
+                    padding: 20
+                  }
+                },
+                tooltip: {
+                  backgroundColor: 'rgba(17, 24, 39, 0.8)',
+                  padding: 12,
+                  cornerRadius: 8,
+                  bodyFont: { family: "'Inter', sans-serif" },
+                  titleFont: { family: "'Inter', sans-serif" },
+                  callbacks: {
+                    label: (ctx) => ` ${ctx.dataset.label}: $${(ctx.raw as number).toFixed(2)}`
+                  }
+                }
+              },
+              scales: { 
+                y: { 
+                  beginAtZero: true, 
+                  grid: { color: 'rgba(0, 0, 0, 0.04)' },
+                  border: { display: false },
+                  ticks: { 
+                    callback: (v) => `$${v}`,
+                    font: { family: "'Inter', sans-serif" },
+                    color: '#6b7280'
+                  } 
+                },
+                x: {
+                  grid: { display: false },
+                  border: { display: false },
+                  ticks: {
+                    font: { family: "'Inter', sans-serif" },
+                    color: '#6b7280'
+                  }
+                }
+              },
+            }}
+          />
+        </div>
       </div>
     </div>
   );
