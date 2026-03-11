@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 export default function Home() {
   return (
@@ -7,6 +8,10 @@ export default function Home() {
       {/* Decorative background blur blobs */}
       <div className="absolute top-[-10%] left-[-10%] w-[40vw] h-[40vw] rounded-full bg-blue-400/20 blur-[100px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40vw] h-[40vw] rounded-full bg-indigo-500/20 blur-[100px] pointer-events-none" />
+
+      <div className="absolute top-6 right-6 z-50">
+        <ThemeToggle />
+      </div>
 
       <div className="text-center max-w-4xl glass-panel p-12 md:p-16 animate-fade-in-up md:mt-10 relative z-10 w-full mx-4">
         <div className="inline-flex items-center justify-center p-4 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-2xl mb-8 shadow-lg transform transition hover:scale-105">

@@ -65,8 +65,8 @@ export default function SpendingChart({ transactions }: Props) {
   return (
     <div className="space-y-8">
       {pieLabels.length > 0 ? (
-        <div className="bg-white/40 border border-white/50 rounded-xl p-6 shadow-sm">
-          <h3 className="text-sm font-bold text-gray-700 mb-4 uppercase tracking-wider text-center">Expenses by Category</h3>
+        <div className="bg-white/40 border border-white/50 dark:bg-slate-800/40 dark:border-slate-700/50 rounded-xl p-6 shadow-sm">
+          <h3 className="text-sm font-bold text-gray-700 dark:text-gray-200 mb-4 uppercase tracking-wider text-center">Expenses by Category</h3>
           <div className="max-w-xs mx-auto relative h-64">
             <Pie
               data={{
@@ -106,12 +106,12 @@ export default function SpendingChart({ transactions }: Props) {
           </div>
         </div>
       ) : (
-        <p className="text-center text-sm font-medium text-gray-400 py-10 bg-white/30 rounded-xl border border-dashed border-gray-300">
+        <p className="text-center text-sm font-medium text-gray-400 dark:text-gray-400 py-10 bg-white/30 dark:bg-slate-800/30 rounded-xl border border-dashed border-gray-300 dark:border-slate-600">
           No expense data to display.
         </p>
       )}
-      <div className="bg-white/40 border border-white/50 rounded-xl p-6 shadow-sm">
-        <h3 className="text-sm font-bold text-gray-700 mb-6 uppercase tracking-wider">Income vs Expenses (Last 6 Months)</h3>
+      <div className="bg-white/40 border border-white/50 dark:bg-slate-800/40 dark:border-slate-700/50 rounded-xl p-6 shadow-sm">
+        <h3 className="text-sm font-bold text-gray-700 dark:text-gray-200 mb-6 uppercase tracking-wider">Income vs Expenses (Last 6 Months)</h3>
         <div className="h-64 relative">
           <Bar
             data={{

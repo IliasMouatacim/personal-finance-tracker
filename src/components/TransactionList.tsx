@@ -31,7 +31,7 @@ export default function TransactionList({ transactions, onDeleted }: Props) {
 
   if (transactions.length === 0) {
     return (
-      <div className="text-center py-12 text-gray-400">
+      <div className="text-center py-12 text-gray-400 dark:text-gray-500">
         <p className="text-lg">No transactions yet.</p>
         <p className="text-sm mt-1">Add your first transaction above!</p>
       </div>
@@ -44,19 +44,19 @@ export default function TransactionList({ transactions, onDeleted }: Props) {
         {transactions.map((tx) => (
           <li 
             key={tx._id} 
-            className="group flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl bg-white/40 border border-white/50 hover:bg-white/70 hover:shadow-md transition-all duration-300 gap-4"
+            className="group flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl bg-white/40 dark:bg-slate-800/40 border border-white/50 dark:border-slate-700/50 hover:bg-white/70 dark:hover:bg-slate-800/70 hover:shadow-md transition-all duration-300 gap-4"
           >
             <div className="flex items-center gap-4 min-w-0">
-              <div className="w-12 h-12 rounded-xl bg-white/80 shadow-sm border border-gray-100 flex items-center justify-center flex-shrink-0 text-2xl group-hover:scale-110 transition-transform duration-300">
+              <div className="w-12 h-12 rounded-xl bg-white/80 dark:bg-slate-700/80 shadow-sm border border-gray-100 dark:border-slate-600 flex items-center justify-center flex-shrink-0 text-2xl group-hover:scale-110 transition-transform duration-300">
                 {CATEGORY_ICONS[tx.category] ?? '📝'}
               </div>
               <div className="min-w-0">
-                <p className="text-base font-bold text-gray-900 truncate">{tx.description}</p>
+                <p className="text-base font-bold text-gray-900 dark:text-gray-100 truncate">{tx.description}</p>
                 <div className="flex items-center gap-2 mt-0.5">
-                  <span className="inline-flex items-center rounded-md bg-gray-100/80 px-2 py-0.5 text-xs font-semibold text-gray-600">
+                  <span className="inline-flex items-center rounded-md bg-gray-100/80 dark:bg-slate-600/80 px-2 py-0.5 text-xs font-semibold text-gray-600 dark:text-gray-300">
                     {tx.category}
                   </span>
-                  <span className="text-xs text-gray-500 font-medium">
+                  <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
                     {new Date(tx.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                   </span>
                 </div>
@@ -69,7 +69,7 @@ export default function TransactionList({ transactions, onDeleted }: Props) {
               <button
                 onClick={() => handleDelete(tx._id)}
                 disabled={deletingId === tx._id}
-                className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all duration-200 disabled:opacity-40"
+                className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition-all duration-200 disabled:opacity-40"
                 aria-label="Delete transaction"
                 title="Delete"
               >

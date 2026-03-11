@@ -7,6 +7,7 @@ import TransactionList from '@/components/TransactionList';
 import SpendingChart from '@/components/SpendingChart';
 import { apiGetTransactions, apiExportCSV, Transaction } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 export default function DashboardPage() {
   const { isAuthenticated, user, logout } = useAuth();
@@ -81,13 +82,14 @@ export default function DashboardPage() {
               💰
             </div>
             <div>
-              <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-700">
+              <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300">
                 Finance Tracker
               </h1>
-              {user && <p className="text-sm font-medium text-gray-500">{user.email}</p>}
+              {user && <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{user.email}</p>}
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <ThemeToggle />
             <button
               onClick={handleExport}
               disabled={exporting || transactions.length === 0}
@@ -97,7 +99,7 @@ export default function DashboardPage() {
             </button>
             <button
               onClick={logout}
-              className="rounded-xl border-2 border-indigo-100 bg-white/50 backdrop-blur-sm px-4 py-2.5 text-sm font-bold text-indigo-700 hover:bg-white/80 transition-all duration-200 hover:-translate-y-0.5"
+              className="rounded-xl border-2 border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm px-4 py-2.5 text-sm font-bold text-indigo-700 dark:text-indigo-300 hover:bg-white/80 dark:hover:bg-slate-800 transition-all duration-200 hover:-translate-y-0.5"
             >
               Sign Out
             </button>
@@ -133,14 +135,14 @@ export default function DashboardPage() {
           <div className="glass-panel p-6 xl:p-8">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center text-indigo-600 text-lg">📝</div>
-              <h2 className="text-xl font-bold text-gray-900">Add Transaction</h2>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Add Transaction</h2>
             </div>
             <TransactionForm onAdded={handleAdded} />
           </div>
           <div className="glass-panel p-6 xl:p-8">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600 text-lg">📈</div>
-              <h2 className="text-xl font-bold text-gray-900">Spending Overview</h2>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Spending Overview</h2>
             </div>
             <SpendingChart transactions={transactions} />
           </div>
@@ -151,9 +153,9 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200/50">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600 text-lg">📋</div>
-              <h2 className="text-xl font-bold text-gray-900">Transaction History</h2>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Transaction History</h2>
             </div>
-            <span className="inline-flex items-center rounded-full bg-indigo-50 px-3 py-1 text-sm font-semibold text-indigo-700 ring-1 ring-inset ring-indigo-600/20">
+            <span className="inline-flex items-center rounded-full bg-indigo-50 dark:bg-indigo-900/30 px-3 py-1 text-sm font-semibold text-indigo-700 dark:text-indigo-300 ring-1 ring-inset ring-indigo-600/20 dark:ring-indigo-500/30">
               {transactions.length} record{transactions.length !== 1 ? 's' : ''}
             </span>
           </div>

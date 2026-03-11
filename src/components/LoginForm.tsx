@@ -32,12 +32,12 @@ export default function LoginForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       {error && (
-        <div className="rounded-xl bg-red-50/80 backdrop-blur-sm p-4 text-sm text-red-700 border border-red-200/50 shadow-sm animate-fade-in-up">
+        <div className="rounded-xl bg-red-50/80 dark:bg-red-900/50 backdrop-blur-sm p-4 text-sm text-red-700 dark:text-red-300 border border-red-200/50 dark:border-red-800/50 shadow-sm animate-fade-in-up">
           {error}
         </div>
       )}
       <div>
-        <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-1">
+        <label htmlFor="email" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
           Email Address
         </label>
         <input
@@ -46,12 +46,12 @@ export default function LoginForm() {
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="block w-full rounded-xl border border-gray-200 bg-white/50 px-4 py-3 text-gray-900 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-200 sm:text-sm"
+          className="block w-full rounded-xl border border-gray-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 px-4 py-3 text-gray-900 dark:text-gray-100 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-200 sm:text-sm"
           placeholder="you@example.com"
         />
       </div>
       <div>
-        <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-1">
+        <label htmlFor="password" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
           Password
         </label>
         <input
@@ -60,7 +60,7 @@ export default function LoginForm() {
           required
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="block w-full rounded-xl border border-gray-200 bg-white/50 px-4 py-3 text-gray-900 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-200 sm:text-sm"
+          className="block w-full rounded-xl border border-gray-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 px-4 py-3 text-gray-900 dark:text-gray-100 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-200 sm:text-sm"
           placeholder="••••••••"
         />
       </div>
@@ -79,9 +79,9 @@ export default function LoginForm() {
           </span>
         ) : 'Sign In'}
       </button>
-      <p className="text-center text-sm font-medium text-gray-600 pt-2 border-t border-gray-200/50">
+      <p className="text-center text-sm font-medium text-gray-600 dark:text-gray-400 pt-2 border-t border-gray-200/50 dark:border-slate-700/50">
         Don&apos;t have an account?{' '}
-        <Link href="/register" className="font-bold text-indigo-600 hover:text-indigo-500 transition-colors">
+        <Link href="/register" className="font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 transition-colors">
           Create one now
         </Link>
       </p>

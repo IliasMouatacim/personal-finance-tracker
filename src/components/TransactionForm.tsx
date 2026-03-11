@@ -56,7 +56,7 @@ export default function TransactionForm({ onAdded }: Props) {
         <div className="rounded-xl bg-red-50/80 backdrop-blur-sm p-4 text-sm text-red-700 border border-red-200/50 shadow-sm animate-fade-in-up">{error}</div>
       )}
       <div>
-        <label htmlFor="description" className="block text-sm font-semibold text-gray-700 mb-1">
+        <label htmlFor="description" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
           Description
         </label>
         <input
@@ -66,12 +66,12 @@ export default function TransactionForm({ onAdded }: Props) {
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="e.g. Grocery shopping"
-          className="block w-full rounded-xl border border-gray-200 bg-white/50 px-4 py-2.5 text-gray-900 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-200 sm:text-sm"
+          className="block w-full rounded-xl border border-gray-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 px-4 py-2.5 text-gray-900 dark:text-gray-100 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-200 sm:text-sm"
         />
       </div>
       <div className="grid grid-cols-2 gap-5">
         <div>
-          <label htmlFor="amount" className="block text-sm font-semibold text-gray-700 mb-1">
+          <label htmlFor="amount" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
             Amount ($)
           </label>
           <input
@@ -83,11 +83,11 @@ export default function TransactionForm({ onAdded }: Props) {
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             placeholder="0.00"
-            className="block w-full rounded-xl border border-gray-200 bg-white/50 px-4 py-2.5 text-gray-900 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-200 sm:text-sm"
+            className="block w-full rounded-xl border border-gray-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 px-4 py-2.5 text-gray-900 dark:text-gray-100 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-200 sm:text-sm"
           />
         </div>
         <div>
-          <label htmlFor="date" className="block text-sm font-semibold text-gray-700 mb-1">
+          <label htmlFor="date" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
             Date
           </label>
           <input
@@ -96,34 +96,34 @@ export default function TransactionForm({ onAdded }: Props) {
             required
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="block w-full rounded-xl border border-gray-200 bg-white/50 px-4 py-2.5 text-gray-900 shadow-sm focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-200 sm:text-sm"
+            className="block w-full rounded-xl border border-gray-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 px-4 py-2.5 text-gray-900 dark:text-gray-100 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-200 sm:text-sm"
           />
         </div>
       </div>
       <div className="grid grid-cols-2 gap-5">
         <div>
-          <label htmlFor="type" className="block text-sm font-semibold text-gray-700 mb-1">
+          <label htmlFor="type" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
             Type
           </label>
           <select
             id="type"
             value={type}
             onChange={(e) => handleTypeChange(e.target.value as 'expense' | 'income')}
-            className="block w-full rounded-xl border border-gray-200 bg-white/50 px-4 py-2.5 text-gray-900 shadow-sm focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-200 sm:text-sm"
+            className="block w-full rounded-xl border border-gray-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 px-4 py-2.5 text-gray-900 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-200 sm:text-sm"
           >
             <option value="expense">Expense</option>
             <option value="income">Income</option>
           </select>
         </div>
         <div>
-          <label htmlFor="category" className="block text-sm font-semibold text-gray-700 mb-1">
+          <label htmlFor="category" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
             Category
           </label>
           <select
             id="category"
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="block w-full rounded-xl border border-gray-200 bg-white/50 px-4 py-2.5 text-gray-900 shadow-sm focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-200 sm:text-sm cursor-pointer"
+            className="block w-full rounded-xl border border-gray-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 px-4 py-2.5 text-gray-900 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-200 sm:text-sm cursor-pointer"
           >
             {categories.map((c) => (
               <option key={c} value={c}>{c}</option>
