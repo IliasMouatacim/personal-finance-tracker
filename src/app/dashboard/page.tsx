@@ -1,9 +1,10 @@
 "use client";
+import Starburst from "@/components/Starburst";
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import Brand from "@/components/Brand";
 import { useRouter } from "next/navigation";
 import {
-  Leaf,
+  Sparkles,
   LayoutDashboard,
   ArrowLeftRight,
   ChartNoAxesCombined,
@@ -90,6 +91,13 @@ export default function DashboardPage() {
   const expenses = transactions
     .filter((t) => t.type === "expense")
     .reduce((s, t) => s + t.amount, 0);
+  const retention =
+    income > 0
+      ? Math.max(
+          0,
+          Math.min(100, Math.round(((income - expenses) / income) * 100)),
+        )
+      : 0;
   const visible = transactions
     .filter(
       (t) =>
@@ -108,12 +116,7 @@ export default function DashboardPage() {
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <Link className="brand" href="/">
-          <span className="brand-icon">
-            <Leaf size={20} />
-          </span>
-          ledger.
-        </Link>
+        <Brand />
         <nav aria-label="Dashboard navigation">
           <a className="active" href="#overview" aria-label="Overview">
             <LayoutDashboard size={18} />
@@ -174,6 +177,18 @@ export default function DashboardPage() {
             </button>
           </div>
         )}
+        <section className="dashboard-welcome">
+          <span className="welcome-star" aria-hidden="true">
+            <Starburst />
+          </span>
+          <div>
+            <h2>Your money. Your next chapter.</h2>
+            <p>A little check-in goes a long way. Let’s make it count.</p>
+          </div>
+          <a href="#new-transaction">
+            Make your next entry <ArrowUpRight size={16} />
+          </a>
+        </section>
         <section className="stat-grid" aria-label="Financial summary">
           {[
             {
@@ -252,7 +267,7 @@ export default function DashboardPage() {
             </section>
           </div>
           <aside>
-            <section className="panel section-panel">
+            <section id="new-transaction" className="panel section-panel">
               <div className="panel-heading">
                 <div>
                   <h2>Make a note of it.</h2>
@@ -270,20 +285,39 @@ export default function DashboardPage() {
                 it consistent.
               </p>
             </section>
-            <div
-              className="panel section-panel"
-              style={{ background: "var(--soft)" }}
-            >
-              <Leaf size={22} />
-              <h2 className="mt-4 font-semibold">
-                Progress, at your own pace.
-              </h2>
-              <p className="form-hint">
-                {income > 0 && income > expenses
-                  ? `You’ve kept ${Math.round(((income - expenses) / income) * 100)}% of your income. A little breathing room for what’s next.`
-                  : "Start by recording the everyday. Understanding your habits is the first step toward changing them."}
+            <section className="retention-card" aria-label="Income retained">
+              <div className="retention-top">
+                <span>THE BIGGER PICTURE</span>
+                <Sparkles size={18} />
+              </div>
+              <div className="retention-visual">
+                <div
+                  className="retention-ring"
+                  style={{
+                    background: `conic-gradient(#deff7a ${retention}%, #47434e 0)`,
+                  }}
+                >
+                  <span>{income > 0 ? `${retention}%` : "—"}</span>
+                </div>
+                <div>
+                  <h3>A little breathing room.</h3>
+                  <p>
+                    {income > 0
+                      ? `You’ve kept ${retention}% of your recorded income after expenses.`
+                      : "Your first income entry starts the picture. Add one to see your progress."}
+                  </p>
+                </div>
+              </div>
+              <p className="retention-foot">
+                {income > 0 ? (
+                  <>
+                    All-time net balance: <b>{money(income - expenses)}</b>
+                  </>
+                ) : (
+                  "Small steps. A clearer picture. Your pace."
+                )}
               </p>
-            </div>
+            </section>
           </aside>
         </div>
       </main>

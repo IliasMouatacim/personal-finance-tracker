@@ -19,13 +19,13 @@ ChartJS.register(
   BarElement,
 );
 const colors = [
-  "#557d59",
-  "#a5ba89",
-  "#d9b999",
-  "#8da7a2",
-  "#bf968a",
-  "#c9c79c",
-  "#86988a",
+  "#5d50e8",
+  "#ac9ef3",
+  "#d6e9a4",
+  "#8aa9ca",
+  "#d7a897",
+  "#cbc6db",
+  "#9993ac",
 ];
 export default function SpendingChart({
   transactions,
@@ -121,13 +121,13 @@ export default function SpendingChart({
               {
                 label: "Income",
                 data: monthly("income"),
-                backgroundColor: "#6c936a",
+                backgroundColor: "#7769ec",
                 borderRadius: 4,
               },
               {
                 label: "Expenses",
                 data: monthly("expense"),
-                backgroundColor: "#d2b496",
+                backgroundColor: "#b9cf8b",
                 borderRadius: 4,
               },
             ],
@@ -137,15 +137,15 @@ export default function SpendingChart({
             plugins: {
               legend: {
                 position: "bottom",
-                labels: { usePointStyle: true, boxWidth: 8, color: "#839080" },
+                labels: { usePointStyle: true, boxWidth: 8, color: "#92909c" },
               },
             },
             scales: {
-              x: { grid: { display: false }, ticks: { color: "#839080" } },
+              x: { grid: { display: false }, ticks: { color: "#92909c" } },
               y: {
                 beginAtZero: true,
                 grid: { color: "#88997d15" },
-                ticks: { color: "#839080", callback: (value) => `$${value}` },
+                ticks: { color: "#92909c", callback: (value) => `$${value}` },
               },
             },
           }}

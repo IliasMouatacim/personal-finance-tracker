@@ -86,6 +86,10 @@ import { chromium } from "playwright";
         `Landing overflows at ${width}px`,
       );
     }
+    await page.getByRole("button", { name: "Week", exact: true }).click();
+    await page.getByLabel("Illustrative week cash flow chart").waitFor();
+    await page.getByRole("button", { name: "Month", exact: true }).click();
+    await page.getByLabel("Illustrative month cash flow chart").waitFor();
     await page.getByRole("link", { name: "Get started", exact: true }).click();
     await page.getByLabel("Email Address").fill("test@example.com");
     await page
