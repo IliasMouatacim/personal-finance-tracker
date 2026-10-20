@@ -8,7 +8,32 @@ export class ApiError extends Error {
   }
 }
 
-const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "").trim();
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "")
+  .trim()
+  .replace(/\/$/, "");
+
+async function readJSON<T>(res: Response): Promise<T> {
+  let data: unknown;
+  try {
+    data = await res.json();
+  } catch {
+    throw new ApiError(
+      "The finance service is unavailable or incorrectly configured. Please try again shortly.",
+      res.status || 502,
+    );
+  }
+  if (!res.ok) {
+    const message =
+      typeof data === "object" &&
+      data !== null &&
+      "error" in data &&
+      typeof data.error === "string"
+        ? data.error
+        : "Your request could not be completed. Please try again.";
+    throw new ApiError(message, res.status);
+  }
+  return data as T;
+}
 
 export interface Transaction {
   _id: string;
@@ -41,10 +66,7 @@ export async function apiRegister(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
   });
-  const data = await res.json();
-  if (!res.ok)
-    throw new ApiError(data.error || "Registration failed.", res.status);
-  return data;
+  return readJSON<{ token: string; email: string }>(res);
 }
 
 export async function apiLogin(
@@ -56,22 +78,14 @@ export async function apiLogin(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
   });
-  const data = await res.json();
-  if (!res.ok) throw new ApiError(data.error || "Login failed.", res.status);
-  return data;
+  return readJSON<{ token: string; email: string }>(res);
 }
 
 export async function apiGetTransactions(): Promise<Transaction[]> {
   const res = await fetch(`${API_BASE}/api/transactions`, {
     headers: authHeaders(),
   });
-  const data = await res.json();
-  if (!res.ok)
-    throw new ApiError(
-      data.error || "Failed to fetch transactions.",
-      res.status,
-    );
-  return data;
+  return readJSON<Transaction[]>(res);
 }
 
 export async function apiAddTransaction(tx: {
@@ -86,9 +100,7 @@ export async function apiAddTransaction(tx: {
     headers: authHeaders(),
     body: JSON.stringify(tx),
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Failed to add transaction.");
-  return data;
+  return readJSON<Transaction>(res);
 }
 
 export async function apiDeleteTransaction(id: string): Promise<void> {
@@ -96,14 +108,18 @@ export async function apiDeleteTransaction(id: string): Promise<void> {
     method: "DELETE",
     headers: authHeaders(),
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Failed to delete transaction.");
+  await readJSON<{ message: string }>(res);
 }
 
 export async function apiExportCSV(): Promise<Blob> {
   const res = await fetch(`${API_BASE}/api/transactions/export`, {
     headers: authHeaders(),
   });
-  if (!res.ok) throw new Error("Failed to export transactions.");
+  if (!res.ok) await readJSON<never>(res);
+  if (!res.headers.get("content-type")?.includes("text/csv"))
+    throw new ApiError(
+      "The finance service returned an invalid export. Please try again.",
+      502,
+    );
   return res.blob();
 }

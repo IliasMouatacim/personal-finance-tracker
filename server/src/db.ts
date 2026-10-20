@@ -1,32 +1,35 @@
-import { MongoClient } from 'mongodb';
+import { Db, MongoClient } from "mongodb";
 
-let client: MongoClient;
-let isConnected = false;
-
-async function connectDB() {
-  if (isConnected) return client.db("finance-tracker");
-
+let connection: Promise<Db> | undefined;
+async function openDatabase(): Promise<Db> {
+  let uri = process.env.MONGODB_URI;
+  if (!uri) {
+    if (process.env.NODE_ENV === "production")
+      throw new Error("DATABASE_NOT_CONFIGURED");
+    const { MongoMemoryServer } = await import("mongodb-memory-server");
+    const mongod = await MongoMemoryServer.create();
+    uri = mongod.getUri();
+  }
+  const client = new MongoClient(uri, {
+    maxPoolSize: 5,
+    serverSelectionTimeoutMS: 10_000,
+  });
   try {
-    let uri = process.env.MONGODB_URI;
-
-    if (!uri) {
-      console.log("No MONGODB_URI found, starting in-memory mongodb-memory-server...");
-      // Dynamically import to avoid requiring it in production if not needed
-      const { MongoMemoryServer } = await import('mongodb-memory-server');
-      const mongod = await MongoMemoryServer.create();
-      uri = mongod.getUri();
-      console.log(`Started in-memory MongoDB at ${uri}`);
-    }
-
-    client = new MongoClient(uri);
     await client.connect();
-    isConnected = true;
-    console.log("Connected to MongoDB");
-    return client.db("finance-tracker");
+    const db = client.db("finance-tracker");
+    await db.collection("users").createIndex({ email: 1 }, { unique: true });
+    await db.collection("transactions").createIndex({ userId: 1, date: -1 });
+    return db;
   } catch (error) {
-    console.error("Error connecting to MongoDB", error);
-    process.exit(1);
+    await client.close();
+    throw error;
   }
 }
-
-export default connectDB;
+export default function connectDB(): Promise<Db> {
+  if (!connection)
+    connection = openDatabase().catch((error) => {
+      connection = undefined;
+      throw error;
+    });
+  return connection;
+}

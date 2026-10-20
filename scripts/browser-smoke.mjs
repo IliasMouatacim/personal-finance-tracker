@@ -35,9 +35,17 @@ import { chromium } from "playwright";
       },
     ];
     let failList = false;
+    let registrationFailure = true;
     await page.route("**/api/**", async (route) => {
       const request = route.request();
       const path = new URL(request.url()).pathname;
+      if (path.endsWith("/auth/register") && registrationFailure) {
+        return route.fulfill({
+          status: 404,
+          contentType: "text/plain",
+          body: "The page could not be found",
+        });
+      }
       if (path.includes("/auth/"))
         return route.fulfill({
           json: { token: "browser-fixture-token", email: "test@example.com" },
@@ -96,6 +104,14 @@ import { chromium } from "playwright";
     await page
       .getByRole("button", { name: "Create Account", exact: true })
       .click();
+    await page
+      .getByRole("alert")
+      .filter({ hasText: "unavailable or incorrectly configured" })
+      .waitFor();
+    registrationFailure = false;
+    await page
+      .getByRole("button", { name: "Create Account", exact: true })
+      .click();
     await page.getByRole("heading", { name: "Your transactions" }).waitFor();
     await page.reload();
     await page.getByText("Monthly salary", { exact: true }).waitFor();
@@ -146,7 +162,13 @@ import { chromium } from "playwright";
         await page.evaluate(
           () => document.documentElement.scrollWidth <= window.innerWidth,
         ),
-        `Dashboard overflows at ${width}px: ${await page.evaluate(() => [...document.querySelectorAll("*")].filter(e => e.getBoundingClientRect().right > innerWidth + 1).slice(0,10).map(e => `${e.tagName}.${e.className}`).join(", "))}`,
+        `Dashboard overflows at ${width}px: ${await page.evaluate(() =>
+          [...document.querySelectorAll("*")]
+            .filter((e) => e.getBoundingClientRect().right > innerWidth + 1)
+            .slice(0, 10)
+            .map((e) => `${e.tagName}.${e.className}`)
+            .join(", "),
+        )}`,
       );
     }
     await page.waitForTimeout(350);

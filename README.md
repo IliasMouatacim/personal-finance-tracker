@@ -1,55 +1,62 @@
 # Ledger
 
-A personal finance tracker built with Next.js, React, Express, and MongoDB. The interface includes a responsive overview, transaction search and filtering, category and monthly charts, CSV export, and light/dark themes.
+A personal finance tracker with a Next.js frontend and built-in backend. Accounts, authenticated transactions, and CSV exports run inside the same Vercel deployment; a separate backend host is optional.
+
+## Deploy on Vercel
+
+1. Create a MongoDB Atlas database (a free cluster is sufficient for development), create a database user, and configure Atlas network access for your Vercel deployment. You can provision Atlas through Vercel's Marketplace/Storage integration or directly through Atlas.
+2. In the Vercel project's environment variables, securely add these for **Preview and Production**:
+   - `MONGODB_URI`: the MongoDB driver connection string supplied by Atlas, with your database user's credentials. Never put it in Git or chat.
+   - `JWT_SECRET`: a long random signing secret, generated locally with `openssl rand -hex 32`. Keep this value private and stable across deployments so sessions remain valid.
+3. Remove `API_SERVER_URL` and `NEXT_PUBLIC_API_URL` if they point to an old or nonexistent backend. The default uses the built-in backend at `/api`.
+4. Redeploy the `work` branch on Vercel. Test `/api/health`, which returns `{"status":"ok"}` only when MongoDB is reachable. Then register and try adding, listing, exporting, and deleting a transaction.
+
+No database or signing secrets are included in this repository. Registration cannot work in production until these settings are present. Missing settings and unreachable services return useful JSON errors instead of exposing raw provider pages or connection strings.
+
+The database name is `finance-tracker`. Connections and index initialization are reused within a warm server instance. The API sets up a unique email index and an index for each user's transaction history.
 
 ## Develop locally
 
-Use Node.js 22.13+ (Node.js 24 is recommended) and npm.
+Use Node.js 22.13+ (24 recommended) and npm:
 
 ```bash
 npm ci
-npm run dev:server
-```
-
-In a second terminal:
-
-```bash
 npm run dev
 ```
 
-The frontend runs on port 3000 and proxies `/api` to the Express backend on port 3001. You do not need a frontend environment file for this default workflow.
-
-When `MONGODB_URI` is absent, the API starts a temporary MongoDB instance using `mongodb-memory-server`. Its first run downloads a checksum-verified binary from `fastdl.mongodb.org`. Data in this mode is disposable and is lost when the database stops. For persistent data, supply `MONGODB_URI` to the backend process.
-
-Optional frontend settings are documented in `.env.local.example`; backend settings are in `server/.env.example`. Backend environment variables must be exported into the server process; `ts-node` does not load `.env` files automatically. `API_SERVER_URL` changes the frontend proxy destination. `NEXT_PUBLIC_API_URL` is only needed when directly calling a separately hosted API; configure that frontend origin in backend `CORS_ORIGIN`.
+The frontend and API run together on port 3000. Without `MONGODB_URI`, development uses a temporary MongoDB instance; the first run downloads a checksum-verified binary from `fastdl.mongodb.org`. Its data is lost when stopped. For persistent local data, place `MONGODB_URI` and `JWT_SECRET` in an ignored `.env.local` file or export them into the process. Never use a temporary database for deployment.
 
 ## Verify
 
 ```bash
 npm run lint
 npm run build
-npm run build:server
+npm run test:api
+npm run test:proxy
 ```
 
-Browser smoke checks use controlled API responses and cover registration, session restoration, transaction interactions, export, themes, error recovery, and responsive layout. They do not replace a live database integration test. With the frontend running:
+API tests exercise real password hashing, JWT verification, validation, account isolation, transaction operations, and CSV escaping against an isolated database fixture. They do not test a live MongoDB connection. Proxy tests run the production Next.js API with controlled upstream responses and verify missing configuration, JSON errors, forwarding, and CSV downloads. Run proxy tests after building.
+
+With the frontend running, browser checks cover registration (including non-JSON provider errors), session restoration, search/filter, transaction interactions, export, themes, error recovery, and responsive layouts:
 
 ```bash
 npx playwright install chromium
 npm run test:browser
 ```
 
-To use an existing Chromium installation, set `CHROMIUM_PATH=/usr/bin/chromium`. Optional `BASE_URL` selects another running frontend (default: port 3000).
+Use `CHROMIUM_PATH=/usr/bin/chromium` for an existing Chromium installation. `BASE_URL` can select another running frontend (default: port 3000). Browser tests use controlled API responses; a live database smoke check is still required after configuring deployment secrets.
 
-For live API validation, start the backend and check `/api/health`, then register/login and create, list, export, and delete a transaction using its bearer token. Keep real credentials and tokens out of logs.
+## Optional separate backend
 
-## Production
+The Express entry point uses exactly the same backend logic as the built-in Next.js API:
 
 ```bash
-npm run build
+npm run dev:server
+# Or:
 npm run build:server
 npm run start:server
-# Start the frontend separately:
-npm run start
 ```
 
-Set a persistent `MONGODB_URI` and a strong `JWT_SECRET`; production startup rejects a missing JWT secret. Configure `CORS_ORIGIN` explicitly when exposing the API to a separate frontend. The default local signing key is for development only. Authentication tokens are currently stored in browser localStorage; cookie-based sessions, rate limiting, password recovery, and deployment hardening remain separate production improvements.
+Express defaults to port 3001. For a separate hosted API, `render.yaml` provides a Render service blueprint. Set its `MONGODB_URI`, `JWT_SECRET`, and `CORS_ORIGIN`. Set `API_SERVER_URL` on the frontend to the backend origin (without `/api`) to use the server-side proxy instead of the built-in backend. `NEXT_PUBLIC_API_URL` remains supported for direct browser requests and requires a matching backend CORS origin.
+
+Production hardening such as cookie-based sessions, rate limiting, and password recovery is separate work. Authentication tokens currently use browser localStorage.

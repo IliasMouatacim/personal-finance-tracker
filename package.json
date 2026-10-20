@@ -10,7 +10,9 @@
     "start": "next start",
     "start:server": "node server/dist/index.js",
     "lint": "eslint",
-    "test:browser": "node scripts/browser-smoke.mjs"
+    "test:browser": "node scripts/browser-smoke.mjs",
+    "test:proxy": "node --test scripts/api-proxy.test.mjs",
+    "test:api": "npm run build:server && node --test scripts/api.test.mjs"
   },
   "dependencies": {
     "@types/bcryptjs": "^2.4.6",
