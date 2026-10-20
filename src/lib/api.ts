@@ -1,53 +1,76 @@
-const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001').trim();
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public status: number,
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "").trim();
 
 export interface Transaction {
   _id: string;
   description: string;
   amount: number;
-  type: 'income' | 'expense';
+  type: "income" | "expense";
   category: string;
   date: string;
 }
 
 function getToken(): string | null {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem('token');
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem("token");
 }
 
 function authHeaders(): HeadersInit {
   const token = getToken();
   return {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 }
 
-export async function apiRegister(email: string, password: string): Promise<{ token: string; email: string }> {
+export async function apiRegister(
+  email: string,
+  password: string,
+): Promise<{ token: string; email: string }> {
   const res = await fetch(`${API_BASE}/api/auth/register`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Registration failed.');
+  if (!res.ok)
+    throw new ApiError(data.error || "Registration failed.", res.status);
   return data;
 }
 
-export async function apiLogin(email: string, password: string): Promise<{ token: string; email: string }> {
+export async function apiLogin(
+  email: string,
+  password: string,
+): Promise<{ token: string; email: string }> {
   const res = await fetch(`${API_BASE}/api/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Login failed.');
+  if (!res.ok) throw new ApiError(data.error || "Login failed.", res.status);
   return data;
 }
 
 export async function apiGetTransactions(): Promise<Transaction[]> {
-  const res = await fetch(`${API_BASE}/api/transactions`, { headers: authHeaders() });
+  const res = await fetch(`${API_BASE}/api/transactions`, {
+    headers: authHeaders(),
+  });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Failed to fetch transactions.');
+  if (!res.ok)
+    throw new ApiError(
+      data.error || "Failed to fetch transactions.",
+      res.status,
+    );
   return data;
 }
 
@@ -59,26 +82,28 @@ export async function apiAddTransaction(tx: {
   date: string;
 }): Promise<Transaction> {
   const res = await fetch(`${API_BASE}/api/transactions`, {
-    method: 'POST',
+    method: "POST",
     headers: authHeaders(),
     body: JSON.stringify(tx),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Failed to add transaction.');
+  if (!res.ok) throw new Error(data.error || "Failed to add transaction.");
   return data;
 }
 
 export async function apiDeleteTransaction(id: string): Promise<void> {
   const res = await fetch(`${API_BASE}/api/transactions/${id}`, {
-    method: 'DELETE',
+    method: "DELETE",
     headers: authHeaders(),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Failed to delete transaction.');
+  if (!res.ok) throw new Error(data.error || "Failed to delete transaction.");
 }
 
 export async function apiExportCSV(): Promise<Blob> {
-  const res = await fetch(`${API_BASE}/api/transactions/export`, { headers: authHeaders() });
-  if (!res.ok) throw new Error('Failed to export transactions.');
+  const res = await fetch(`${API_BASE}/api/transactions/export`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to export transactions.");
   return res.blob();
 }

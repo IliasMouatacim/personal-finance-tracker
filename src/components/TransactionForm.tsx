@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { apiAddTransaction, Transaction } from '@/lib/api';
 
+function today() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+
 const EXPENSE_CATEGORIES = ['Food', 'Transport', 'Housing', 'Entertainment', 'Healthcare', 'Shopping', 'Other'];
 const INCOME_CATEGORIES = ['Salary', 'Freelance', 'Investment', 'Gift', 'Other'];
 
@@ -15,7 +17,7 @@ export default function TransactionForm({ onAdded }: Props) {
   const [amount, setAmount] = useState('');
   const [type, setType] = useState<'expense' | 'income'>('expense');
   const [category, setCategory] = useState('Other');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(today());
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -29,10 +31,11 @@ export default function TransactionForm({ onAdded }: Props) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    if (!description.trim() || !Number.isFinite(Number(amount)) || Number(amount) <= 0) { setError('Enter a description and a positive amount.'); return; }
     setLoading(true);
     try {
       const tx = await apiAddTransaction({
-        description,
+        description: description.trim(),
         amount: parseFloat(amount),
         type,
         category,
@@ -42,7 +45,7 @@ export default function TransactionForm({ onAdded }: Props) {
       setDescription('');
       setAmount('');
       setCategory('Other');
-      setDate(new Date().toISOString().split('T')[0]);
+      setDate(today());
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to add transaction.');
     } finally {
@@ -53,7 +56,7 @@ export default function TransactionForm({ onAdded }: Props) {
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       {error && (
-        <div className="rounded-xl bg-red-50/80 backdrop-blur-sm p-4 text-sm text-red-700 border border-red-200/50 shadow-sm animate-fade-in-up">{error}</div>
+        <div role="alert" className="rounded-xl bg-red-50/80 backdrop-blur-sm p-4 text-sm text-red-700 border border-red-200/50 shadow-sm animate-fade-in-up">{error}</div>
       )}
       <div>
         <label htmlFor="description" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
@@ -62,6 +65,7 @@ export default function TransactionForm({ onAdded }: Props) {
         <input
           type="text"
           id="description"
+          maxLength={200}
           required
           value={description}
           onChange={(e) => setDescription(e.target.value)}

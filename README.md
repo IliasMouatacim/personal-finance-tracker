@@ -1,36 +1,55 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Ledger
 
-## Getting Started
+A personal finance tracker built with Next.js, React, Express, and MongoDB. The interface includes a responsive overview, transaction search and filtering, category and monthly charts, CSV export, and light/dark themes.
 
-First, run the development server:
+## Develop locally
+
+Use Node.js 22.13+ (Node.js 24 is recommended) and npm.
+
+```bash
+npm ci
+npm run dev:server
+```
+
+In a second terminal:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The frontend runs on port 3000 and proxies `/api` to the Express backend on port 3001. You do not need a frontend environment file for this default workflow.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+When `MONGODB_URI` is absent, the API starts a temporary MongoDB instance using `mongodb-memory-server`. Its first run downloads a checksum-verified binary from `fastdl.mongodb.org`. Data in this mode is disposable and is lost when the database stops. For persistent data, supply `MONGODB_URI` to the backend process.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Optional frontend settings are documented in `.env.local.example`; backend settings are in `server/.env.example`. Backend environment variables must be exported into the server process; `ts-node` does not load `.env` files automatically. `API_SERVER_URL` changes the frontend proxy destination. `NEXT_PUBLIC_API_URL` is only needed when directly calling a separately hosted API; configure that frontend origin in backend `CORS_ORIGIN`.
 
-## Learn More
+## Verify
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run lint
+npm run build
+npm run build:server
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Browser smoke checks use controlled API responses and cover registration, session restoration, transaction interactions, export, themes, error recovery, and responsive layout. They do not replace a live database integration test. With the frontend running:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npx playwright install chromium
+npm run test:browser
+```
 
-## Deploy on Vercel
+To use an existing Chromium installation, set `CHROMIUM_PATH=/usr/bin/chromium`. Optional `BASE_URL` selects another running frontend (default: port 3000).
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+For live API validation, start the backend and check `/api/health`, then register/login and create, list, export, and delete a transaction using its bearer token. Keep real credentials and tokens out of logs.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Production
+
+```bash
+npm run build
+npm run build:server
+npm run start:server
+# Start the frontend separately:
+npm run start
+```
+
+Set a persistent `MONGODB_URI` and a strong `JWT_SECRET`; production startup rejects a missing JWT secret. Configure `CORS_ORIGIN` explicitly when exposing the API to a separate frontend. The default local signing key is for development only. Authentication tokens are currently stored in browser localStorage; cookie-based sessions, rate limiting, password recovery, and deployment hardening remain separate production improvements.

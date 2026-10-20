@@ -32,7 +32,7 @@ export default function LoginForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       {error && (
-        <div className="rounded-xl bg-red-50/80 dark:bg-red-900/50 backdrop-blur-sm p-4 text-sm text-red-700 dark:text-red-300 border border-red-200/50 dark:border-red-800/50 shadow-sm animate-fade-in-up">
+        <div role="alert" className="rounded-xl bg-red-50/80 dark:bg-red-900/50 backdrop-blur-sm p-4 text-sm text-red-700 dark:text-red-300 border border-red-200/50 dark:border-red-800/50 shadow-sm animate-fade-in-up">
           {error}
         </div>
       )}
@@ -43,6 +43,7 @@ export default function LoginForm() {
         <input
           type="email"
           id="email"
+          autoComplete="email"
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -57,6 +58,7 @@ export default function LoginForm() {
         <input
           type="password"
           id="password"
+          autoComplete="current-password"
           required
           value={password}
           onChange={(e) => setPassword(e.target.value)}

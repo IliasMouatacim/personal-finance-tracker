@@ -1,31 +1,31 @@
-'use client';
-
-import * as React from 'react';
-import { useTheme } from 'next-themes';
-import { Moon, Sun } from 'lucide-react';
-
+"use client";
+import { useSyncExternalStore } from "react";
+import { useTheme } from "next-themes";
+import { Moon, Sun } from "lucide-react";
+const subscribe = () => () => {};
 export function ThemeToggle() {
-  const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = React.useState(false);
-
-  React.useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) {
-    return <div className="w-10 h-10" />; // placeholder
-  }
-
+  const { resolvedTheme, setTheme } = useTheme();
+  const mounted = useSyncExternalStore(
+    subscribe,
+    () => true,
+    () => false,
+  );
   return (
     <button
-      onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-      className="p-2 rounded-full glass-panel hover:bg-white/20 dark:hover:bg-slate-800/50 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 flex items-center justify-center"
-      aria-label="Toggle Dark Mode"
+      className="button"
+      style={{ padding: 9 }}
+      disabled={!mounted}
+      onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+      aria-label={
+        mounted && resolvedTheme === "dark"
+          ? "Switch to light theme"
+          : "Switch to dark theme"
+      }
     >
-      {theme === 'dark' ? (
-        <Sun className="h-5 w-5 text-yellow-400" />
+      {mounted && resolvedTheme === "dark" ? (
+        <Sun size={17} />
       ) : (
-        <Moon className="h-5 w-5 text-indigo-600" />
+        <Moon size={17} />
       )}
     </button>
   );

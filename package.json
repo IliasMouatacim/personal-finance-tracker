@@ -4,12 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "dev:server": "ts-node server/index.ts",
+    "dev:server": "ts-node --project server/tsconfig.json server/index.ts",
     "build": "next build",
     "build:server": "cd server && npx tsc",
     "start": "next start",
     "start:server": "node server/dist/index.js",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:browser": "node scripts/browser-smoke.mjs"
   },
   "dependencies": {
     "@types/bcryptjs": "^2.4.6",
@@ -25,21 +26,26 @@
     "jsonwebtoken": "^9.0.3",
     "lucide-react": "^0.577.0",
     "mongodb": "^7.1.0",
-    "next": "16.1.6",
+    "next": "^16.4.2",
     "next-themes": "^0.4.6",
-    "react": "19.2.3",
+    "react": "^19.3.1",
     "react-chartjs-2": "^5.3.1",
-    "react-dom": "19.2.3",
+    "react-dom": "^19.3.1",
     "typescript": "^5.9.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/semver": "^7.8.0",
     "eslint": "^9",
-    "eslint-config-next": "16.1.6",
+    "eslint-config-next": "^16.4.2",
     "mongodb-memory-server": "^11.0.1",
+    "playwright": "^1.64.1",
     "tailwindcss": "^4",
     "ts-node": "^10.9.2"
+  },
+  "engines": {
+    "node": ">=22.13.0"
   }
 }

@@ -1,168 +1,292 @@
-'use client';
-
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import TransactionForm from '@/components/TransactionForm';
-import TransactionList from '@/components/TransactionList';
-import SpendingChart from '@/components/SpendingChart';
-import { apiGetTransactions, apiExportCSV, Transaction } from '@/lib/api';
-import { useAuth } from '@/contexts/AuthContext';
-import { ThemeToggle } from '@/components/ThemeToggle';
-
+"use client";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import {
+  Leaf,
+  LayoutDashboard,
+  ArrowLeftRight,
+  ChartNoAxesCombined,
+  LogOut,
+  Download,
+  ArrowDownLeft,
+  ArrowUpRight,
+  Wallet,
+} from "lucide-react";
+import TransactionForm from "@/components/TransactionForm";
+import TransactionList from "@/components/TransactionList";
+import SpendingChart from "@/components/SpendingChart";
+import {
+  apiGetTransactions,
+  apiExportCSV,
+  Transaction,
+  ApiError,
+} from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
+import { ThemeToggle } from "@/components/ThemeToggle";
+const money = (value: number) =>
+  new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(
+    value,
+  );
 export default function DashboardPage() {
-  const { isAuthenticated, user, logout } = useAuth();
+  const { isAuthenticated, ready, user, logout } = useAuth();
   const router = useRouter();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [exporting, setExporting] = useState(false);
-
+  const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState("all");
+  const [retry, setRetry] = useState(0);
   useEffect(() => {
+    if (!ready) return;
     if (!isAuthenticated) {
-      router.push('/login');
+      router.replace("/login");
       return;
     }
+    let active = true;
     apiGetTransactions()
-      .then(setTransactions)
-      .catch(() => router.push('/login'))
-      .finally(() => setLoading(false));
-  }, [isAuthenticated, router]);
-
-  const handleAdded = (tx: Transaction) => {
-    setTransactions((prev) => [tx, ...prev]);
-  };
-
-  const handleDeleted = (id: string) => {
-    setTransactions((prev) => prev.filter((t) => t._id !== id));
-  };
-
+      .then((data) => {
+        if (active) {
+          setTransactions(data);
+          setError("");
+        }
+      })
+      .catch((err) => {
+        if (!active) return;
+        if (err instanceof ApiError && [401, 403].includes(err.status)) {
+          logout();
+        } else
+          setError(
+            "We couldn’t load your transactions. Check your connection and try again.",
+          );
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [ready, isAuthenticated, router, logout, retry]);
   const handleExport = async () => {
     setExporting(true);
     try {
       const blob = await apiExportCSV();
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
-      a.download = 'transactions.csv';
+      a.download = "transactions.csv";
       a.click();
       URL.revokeObjectURL(url);
     } catch {
-      alert('Failed to export CSV.');
+      setError("Your export couldn’t be downloaded. Please try again.");
     } finally {
       setExporting(false);
     }
   };
-
-  // Summary stats
-  const totalIncome = transactions.filter((t) => t.type === 'income').reduce((s, t) => s + t.amount, 0);
-  const totalExpenses = transactions.filter((t) => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
-  const balance = totalIncome - totalExpenses;
-
-  if (loading) {
+  const income = transactions
+    .filter((t) => t.type === "income")
+    .reduce((s, t) => s + t.amount, 0);
+  const expenses = transactions
+    .filter((t) => t.type === "expense")
+    .reduce((s, t) => s + t.amount, 0);
+  const visible = transactions
+    .filter(
+      (t) =>
+        (filter === "all" || t.type === filter) &&
+        `${t.description} ${t.category}`
+          .toLowerCase()
+          .includes(query.toLowerCase()),
+    )
+    .sort((a, b) => Date.parse(b.date) - Date.parse(a.date));
+  if (!ready || !isAuthenticated || loading)
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
-          <div className="text-gray-600 font-medium">Loading your finances...</div>
-        </div>
+      <div className="loading-screen" role="status">
+        Gathering your financial picture…
       </div>
     );
-  }
-
   return (
-    <div className="min-h-screen relative overflow-hidden">
-      {/* Background blobs for dashboard */}
-      <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-blue-400/10 blur-[100px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-indigo-500/10 blur-[100px] pointer-events-none" />
-
-      {/* Header */}
-      <header className="bg-white/60 backdrop-blur-lg border-b border-white/40 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-white text-xl shadow-md">
-              💰
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300">
-                Finance Tracker
-              </h1>
-              {user && <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{user.email}</p>}
-            </div>
+    <div className="app-shell">
+      <aside className="sidebar">
+        <Link className="brand" href="/">
+          <span className="brand-icon">
+            <Leaf size={20} />
+          </span>
+          ledger.
+        </Link>
+        <nav aria-label="Dashboard navigation">
+          <a className="active" href="#overview" aria-label="Overview">
+            <LayoutDashboard size={18} />
+            Overview
+          </a>
+          <a href="#transactions" aria-label="Transactions">
+            <ArrowLeftRight size={18} />
+            Transactions
+          </a>
+          <a href="#insights" aria-label="Insights">
+            <ChartNoAxesCombined size={18} />
+            Insights
+          </a>
+        </nav>
+        <div className="sidebar-bottom">
+          <span className="eyebrow">YOUR PERSONAL SPACE</span>
+          <p>{user?.email}</p>
+          <button className="button" onClick={logout}>
+            <LogOut size={15} />
+            Sign out
+          </button>
+        </div>
+      </aside>
+      <main id="overview" className="app-main">
+        <header className="app-header">
+          <div>
+            <span className="eyebrow">YOUR MONEY, AT A GLANCE</span>
+            <h1>A little more clarity.</h1>
+            <p>Welcome back. Here’s where things stand.</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="header-actions">
             <ThemeToggle />
             <button
+              className="button"
               onClick={handleExport}
-              disabled={exporting || transactions.length === 0}
-              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-md hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-50 transition-all duration-200 disabled:hover:translate-y-0"
+              disabled={exporting || !transactions.length}
             >
-              {exporting ? 'Exporting...' : '⬇ Export CSV'}
+              <Download size={15} />
+              {exporting ? "Exporting…" : "Export CSV"}
             </button>
             <button
+              className="button mobile-signout"
               onClick={logout}
-              className="rounded-xl border-2 border-[var(--color-glass-border)] bg-[var(--color-glass-bg)] backdrop-blur-sm px-4 py-2.5 text-sm font-bold text-indigo-700 dark:text-indigo-300 hover:bg-white/80 dark:hover:bg-slate-800 transition-all duration-200 hover:-translate-y-0.5"
+              aria-label="Sign out"
             >
-              Sign Out
+              <LogOut size={16} />
             </button>
           </div>
-        </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 relative z-10 animate-fade-in-up">
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          <div className="glass-panel p-6 hover:-translate-y-1 transition-transform duration-300">
-            <p className="text-sm text-gray-500 font-bold uppercase tracking-wider mb-1">Total Balance</p>
-            <p className={`text-4xl font-extrabold ${balance >= 0 ? 'text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-500' : 'text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-pink-500'}`}>
-              {balance >= 0 ? '+' : ''}${balance.toFixed(2)}
-            </p>
+        </header>
+        {error && (
+          <div className="notice" role="alert">
+            {error}{" "}
+            <button
+              className="underline"
+              onClick={() => setRetry((n) => n + 1)}
+            >
+              Retry loading
+            </button>
           </div>
-          <div className="glass-panel p-6 hover:-translate-y-1 transition-transform duration-300">
-            <p className="text-sm text-gray-500 font-bold uppercase tracking-wider mb-1">Total Income</p>
-            <p className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-green-500">
-              +${totalIncome.toFixed(2)}
-            </p>
+        )}
+        <section className="stat-grid" aria-label="Financial summary">
+          {[
+            {
+              title: "Total balance",
+              value: income - expenses,
+              icon: Wallet,
+              caption: "Income minus expenses",
+            },
+            {
+              title: "Money in",
+              value: income,
+              icon: ArrowDownLeft,
+              caption: "All-time income",
+            },
+            {
+              title: "Money out",
+              value: expenses,
+              icon: ArrowUpRight,
+              caption: "All-time expenses",
+            },
+          ].map(({ title, value, icon: Icon, caption }) => (
+            <article className="panel stat-card" key={title}>
+              <div className="stat-label">
+                {title}
+                <Icon size={17} />
+              </div>
+              <div className="stat-value">{money(value)}</div>
+              <div className="stat-caption">{caption}</div>
+            </article>
+          ))}
+        </section>
+        <div className="dashboard-grid">
+          <div>
+            <section id="transactions" className="panel section-panel">
+              <div className="panel-heading">
+                <div>
+                  <h2>Your transactions</h2>
+                  <p>The little details behind the bigger picture.</p>
+                </div>
+                <span className="preview-badge">{visible.length} records</span>
+              </div>
+              <div className="history-toolbar">
+                <input
+                  type="search"
+                  aria-label="Search transactions"
+                  placeholder="Search description or category…"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                />
+                <select
+                  aria-label="Filter transactions by type"
+                  value={filter}
+                  onChange={(e) => setFilter(e.target.value)}
+                >
+                  <option value="all">All transactions</option>
+                  <option value="income">Income</option>
+                  <option value="expense">Expenses</option>
+                </select>
+              </div>
+              <TransactionList
+                transactions={visible}
+                onDeleted={(id) =>
+                  setTransactions((prev) => prev.filter((t) => t._id !== id))
+                }
+              />
+            </section>
+            <section id="insights" className="panel section-panel">
+              <div className="panel-heading">
+                <div>
+                  <h2>Find your flow</h2>
+                  <p>Understand where your money goes.</p>
+                </div>
+                <ChartNoAxesCombined size={19} />
+              </div>
+              <SpendingChart transactions={transactions} />
+            </section>
           </div>
-          <div className="glass-panel p-6 hover:-translate-y-1 transition-transform duration-300">
-            <p className="text-sm text-gray-500 font-bold uppercase tracking-wider mb-1">Total Expenses</p>
-            <p className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-pink-500">
-              -${totalExpenses.toFixed(2)}
-            </p>
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="glass-panel p-6 xl:p-8">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center text-indigo-600 text-lg">📝</div>
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Add Transaction</h2>
+          <aside>
+            <section className="panel section-panel">
+              <div className="panel-heading">
+                <div>
+                  <h2>Make a note of it.</h2>
+                  <p>Add an income or expense to your ledger.</p>
+                </div>
+                <span className="round-icon">
+                  <ArrowLeftRight size={17} />
+                </span>
+              </div>
+              <TransactionForm
+                onAdded={(tx) => setTransactions((prev) => [tx, ...prev])}
+              />
+              <p className="form-hint">
+                Small entries add up to a clearer picture. Keep it simple, keep
+                it consistent.
+              </p>
+            </section>
+            <div
+              className="panel section-panel"
+              style={{ background: "var(--soft)" }}
+            >
+              <Leaf size={22} />
+              <h2 className="mt-4 font-semibold">
+                Progress, at your own pace.
+              </h2>
+              <p className="form-hint">
+                {income > 0 && income > expenses
+                  ? `You’ve kept ${Math.round(((income - expenses) / income) * 100)}% of your income. A little breathing room for what’s next.`
+                  : "Start by recording the everyday. Understanding your habits is the first step toward changing them."}
+              </p>
             </div>
-            <TransactionForm onAdded={handleAdded} />
-          </div>
-          <div className="glass-panel p-6 xl:p-8">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600 text-lg">📈</div>
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Spending Overview</h2>
-            </div>
-            <SpendingChart transactions={transactions} />
-          </div>
-        </div>
-
-        {/* Transaction History */}
-        <div className="glass-panel p-6 xl:p-8">
-          <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200/50">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600 text-lg">📋</div>
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Transaction History</h2>
-            </div>
-            <span className="inline-flex items-center rounded-full bg-indigo-50 dark:bg-indigo-900/30 px-3 py-1 text-sm font-semibold text-indigo-700 dark:text-indigo-300 ring-1 ring-inset ring-indigo-600/20 dark:ring-indigo-500/30">
-              {transactions.length} record{transactions.length !== 1 ? 's' : ''}
-            </span>
-          </div>
-          <TransactionList transactions={transactions} onDeleted={handleDeleted} />
+          </aside>
         </div>
       </main>
     </div>
   );
 }
-
