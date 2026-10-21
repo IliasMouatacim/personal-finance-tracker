@@ -1,14 +1,18 @@
 "use client";
-import { useState } from "react";
-import { ArrowUpRight, ArrowDownLeft, Trash2 } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { ArrowUpRight, ArrowDownLeft, Trash2, Pencil, X } from "lucide-react";
+import TransactionForm from "@/components/TransactionForm";
 import { apiDeleteTransaction, Transaction } from "@/lib/api";
 export default function TransactionList({
   transactions,
   onDeleted,
+  onUpdated,
 }: {
   transactions: Transaction[];
   onDeleted: (id: string) => void;
+  onUpdated: (tx: Transaction) => void;
 }) {
+  const [editing, setEditing] = useState<Transaction | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [confirming, setConfirming] = useState<string | null>(null);
@@ -31,6 +35,16 @@ export default function TransactionList({
   }
   return (
     <div>
+      {editing && (
+        <Editor
+          transaction={editing}
+          onClose={() => setEditing(null)}
+          onSaved={(tx) => {
+            onUpdated(tx);
+            setEditing(null);
+          }}
+        />
+      )}
       {error && (
         <p className="notice" role="alert">
           {error}
@@ -78,6 +92,13 @@ export default function TransactionList({
                   currency: "USD",
                 }).format(tx.amount)}
               </span>
+              <button
+                className="delete-button"
+                onClick={() => setEditing(tx)}
+                aria-label={`Edit ${tx.description}`}
+              >
+                <Pencil size={14} />
+              </button>
               {confirming === tx._id ? (
                 <div className="flex flex-wrap gap-2 text-xs">
                   <button
@@ -115,5 +136,45 @@ function ArrowLeftRightPlaceholder() {
     <span className="round-icon mx-auto">
       <ArrowUpRight size={18} />
     </span>
+  );
+}
+
+function Editor({
+  transaction,
+  onClose,
+  onSaved,
+}: {
+  transaction: Transaction;
+  onClose: () => void;
+  onSaved: (tx: Transaction) => void;
+}) {
+  const dialog = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const el = dialog.current;
+    el?.showModal();
+    return () => el?.close();
+  }, []);
+  return (
+    <dialog
+      ref={dialog}
+      className="edit-dialog"
+      aria-labelledby="edit-title"
+      onCancel={onClose}
+    >
+      <div className="panel-heading">
+        <div>
+          <h2 id="edit-title">A little correction.</h2>
+          <p>Update your transaction details.</p>
+        </div>
+        <button
+          className="delete-button"
+          aria-label="Close transaction editor"
+          onClick={onClose}
+        >
+          <X size={19} />
+        </button>
+      </div>
+      <TransactionForm transaction={transaction} onAdded={onSaved} />
+    </dialog>
   );
 }

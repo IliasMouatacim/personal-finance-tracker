@@ -123,3 +123,43 @@ export async function apiExportCSV(): Promise<Blob> {
     );
   return res.blob();
 }
+
+export interface Budget {
+  _id: string;
+  category: string;
+  month: string;
+  limit: number;
+}
+export interface SavingsGoal {
+  _id: string;
+  name: string;
+  target: number;
+  saved: number;
+}
+async function planningRequest<T>(
+  path: string,
+  method = "GET",
+  data?: unknown,
+): Promise<T> {
+  return readJSON<T>(
+    await fetch(`${API_BASE}/api/${path}`, {
+      method,
+      headers: authHeaders(),
+      ...(data === undefined ? {} : { body: JSON.stringify(data) }),
+    }),
+  );
+}
+export const apiGetBudgets = () => planningRequest<Budget[]>("budgets");
+export const apiGetGoals = () => planningRequest<SavingsGoal[]>("goals");
+export const apiSaveBudget = (budget: Omit<Budget, "_id">) =>
+  planningRequest<Budget>("budgets", "POST", budget);
+export const apiCreateGoal = (goal: { name: string; target: number }) =>
+  planningRequest<SavingsGoal>("goals", "POST", goal);
+export const apiContributeGoal = (id: string, contribution: number) =>
+  planningRequest<SavingsGoal>(`goals/${id}`, "PATCH", { contribution });
+export const apiRemovePlan = (type: "budgets" | "goals", id: string) =>
+  planningRequest<{ message: string }>(`${type}/${id}`, "DELETE");
+export const apiUpdateTransaction = (
+  id: string,
+  data: Omit<Transaction, "_id">,
+) => planningRequest<Transaction>(`transactions/${id}`, "PATCH", data);

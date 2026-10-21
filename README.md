@@ -15,6 +15,17 @@ No database or signing secrets are included in this repository. Registration can
 
 The database name is `finance-tracker`. Connections and index initialization are reused within a warm server instance. The API sets up a unique email index and an index for each user's transaction history.
 
+## Planning your money
+
+The dashboard now includes:
+
+- A month selector for summary totals and transaction history. Charts retain their explicitly labelled all-time and six-month views.
+- Transaction editing from the pencil icon, with changes reflected in totals, charts, and budget spending.
+- Category budgets saved per account and calendar month. Saving the same category/month updates the limit; progress shows remaining funds or overspending.
+- Savings goals with recorded contributions and progress. These are planning records: contributions do not move money or create transactions. Removing a goal removes its progress record.
+
+Budgets and goals are stored in MongoDB with account ownership checks, alongside transactions. Database indexes are created automatically when the backend connects.
+
 ## Develop locally
 
 Use Node.js 22.13+ (24 recommended) and npm:

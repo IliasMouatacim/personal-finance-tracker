@@ -19,6 +19,10 @@ async function openDatabase(): Promise<Db> {
     const db = client.db("finance-tracker");
     await db.collection("users").createIndex({ email: 1 }, { unique: true });
     await db.collection("transactions").createIndex({ userId: 1, date: -1 });
+    await db
+      .collection("budgets")
+      .createIndex({ userId: 1, month: 1, category: 1 }, { unique: true });
+    await db.collection("goals").createIndex({ userId: 1 });
     return db;
   } catch (error) {
     await client.close();

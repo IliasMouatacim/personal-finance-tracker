@@ -13,7 +13,9 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   Wallet,
+  Target,
 } from "lucide-react";
+import PlanningPanel from "@/components/PlanningPanel";
 import TransactionForm from "@/components/TransactionForm";
 import TransactionList from "@/components/TransactionList";
 import SpendingChart from "@/components/SpendingChart";
@@ -38,6 +40,7 @@ export default function DashboardPage() {
   const [exporting, setExporting] = useState(false);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all");
+  const [month, setMonth] = useState("all");
   const [retry, setRetry] = useState(0);
   useEffect(() => {
     if (!ready) return;
@@ -85,10 +88,21 @@ export default function DashboardPage() {
       setExporting(false);
     }
   };
-  const income = transactions
+  const periodTransactions = transactions.filter(
+    (t) => month === "all" || t.date.slice(0, 7) === month,
+  );
+  const months = Array.from(
+    new Set([
+      ...transactions.map((t) => t.date.slice(0, 7)),
+      ...(month === "all" ? [] : [month]),
+    ]),
+  )
+    .sort()
+    .reverse();
+  const income = periodTransactions
     .filter((t) => t.type === "income")
     .reduce((s, t) => s + t.amount, 0);
-  const expenses = transactions
+  const expenses = periodTransactions
     .filter((t) => t.type === "expense")
     .reduce((s, t) => s + t.amount, 0);
   const retention =
@@ -98,7 +112,7 @@ export default function DashboardPage() {
           Math.min(100, Math.round(((income - expenses) / income) * 100)),
         )
       : 0;
-  const visible = transactions
+  const visible = periodTransactions
     .filter(
       (t) =>
         (filter === "all" || t.type === filter) &&
@@ -129,6 +143,10 @@ export default function DashboardPage() {
           <a href="#insights" aria-label="Insights">
             <ChartNoAxesCombined size={18} />
             Insights
+          </a>
+          <a href="#planning" aria-label="Budgets and goals">
+            <Target size={18} />
+            Plans
           </a>
         </nav>
         <div className="sidebar-bottom">
@@ -189,25 +207,52 @@ export default function DashboardPage() {
             Make your next entry <ArrowUpRight size={16} />
           </a>
         </section>
+        <div className="period-toolbar">
+          <span>YOUR OVERVIEW</span>
+          <label>
+            Display period
+            <select
+              aria-label="Dashboard month"
+              value={month}
+              onChange={(e) => setMonth(e.target.value)}
+            >
+              <option value="all">All time</option>
+              {months.map((m) => (
+                <option key={m} value={m}>
+                  {new Date(`${m}-01T12:00:00Z`).toLocaleDateString("en-US", {
+                    month: "long",
+                    year: "numeric",
+                    timeZone: "UTC",
+                  })}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
         <section className="stat-grid" aria-label="Financial summary">
           {[
             {
-              title: "Total balance",
+              title: month === "all" ? "Total balance" : "Period net",
               value: income - expenses,
               icon: Wallet,
-              caption: "Income minus expenses",
+              caption:
+                month === "all" ? "Income minus expenses" : "Selected month",
             },
             {
               title: "Money in",
               value: income,
               icon: ArrowDownLeft,
-              caption: "All-time income",
+              caption:
+                month === "all" ? "All-time income" : "Selected month income",
             },
             {
               title: "Money out",
               value: expenses,
               icon: ArrowUpRight,
-              caption: "All-time expenses",
+              caption:
+                month === "all"
+                  ? "All-time expenses"
+                  : "Selected month expenses",
             },
           ].map(({ title, value, icon: Icon, caption }) => (
             <article className="panel stat-card" key={title}>
@@ -250,6 +295,11 @@ export default function DashboardPage() {
               </div>
               <TransactionList
                 transactions={visible}
+                onUpdated={(tx) =>
+                  setTransactions((prev) =>
+                    prev.map((t) => (t._id === tx._id ? tx : t)),
+                  )
+                }
                 onDeleted={(id) =>
                   setTransactions((prev) => prev.filter((t) => t._id !== id))
                 }
@@ -303,7 +353,7 @@ export default function DashboardPage() {
                   <h3>A little breathing room.</h3>
                   <p>
                     {income > 0
-                      ? `You’ve kept ${retention}% of your recorded income after expenses.`
+                      ? `You’ve kept ${retention}% of your recorded income after expenses for this period.`
                       : "Your first income entry starts the picture. Add one to see your progress."}
                   </p>
                 </div>
@@ -311,7 +361,10 @@ export default function DashboardPage() {
               <p className="retention-foot">
                 {income > 0 ? (
                   <>
-                    All-time net balance: <b>{money(income - expenses)}</b>
+                    {month === "all"
+                      ? "All-time net balance:"
+                      : "Period net balance:"}{" "}
+                    <b>{money(income - expenses)}</b>
                   </>
                 ) : (
                   "Small steps. A clearer picture. Your pace."
@@ -320,6 +373,7 @@ export default function DashboardPage() {
             </section>
           </aside>
         </div>
+        <PlanningPanel transactions={transactions} />
       </main>
     </div>
   );

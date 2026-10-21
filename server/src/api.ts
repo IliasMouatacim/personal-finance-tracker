@@ -134,13 +134,115 @@ export function createApi(database: () => Promise<Db> = connectDB) {
           email: existing.email,
         });
       }
+      if (/^\/api\/(budgets|goals)(\/[^/]+)?$/.test(path)) {
+        const owner = userId(request);
+        const [, , resource, resourceId] = path.split("/");
+        const collection = (await database()).collection(resource);
+        if (method === "GET" && !resourceId)
+          return json(
+            await collection
+              .find({ userId: owner })
+              .sort({ createdAt: -1 })
+              .toArray(),
+          );
+        if (method === "DELETE" && resourceId) {
+          if (!ObjectId.isValid(resourceId))
+            throw new HttpError(400, "Invalid record ID.");
+          const result = await collection.deleteOne({
+            _id: new ObjectId(resourceId),
+            userId: owner,
+          });
+          if (!result.deletedCount)
+            throw new HttpError(404, "Record not found.");
+          return json({ message: "Removed." });
+        }
+        if (method === "POST" && !resourceId) {
+          const data = await body(request);
+          if (resource === "budgets") {
+            const { category, limit, month } = data;
+            if (
+              typeof category !== "string" ||
+              !category.trim() ||
+              category.length > 80 ||
+              typeof month !== "string" ||
+              !/^\d{4}-(0[1-9]|1[0-2])$/.test(month) ||
+              typeof limit !== "number" ||
+              !Number.isFinite(limit) ||
+              limit < 0.01 ||
+              limit > 1e12
+            )
+              throw new HttpError(
+                400,
+                "Choose a category, valid month and a positive budget.",
+              );
+            const filter = { userId: owner, category: category.trim(), month };
+            await collection.updateOne(
+              filter,
+              {
+                $set: { limit: Math.round(limit * 100) / 100 },
+                $setOnInsert: { ...filter, createdAt: new Date() },
+              },
+              { upsert: true },
+            );
+            return json(await collection.findOne(filter), 201);
+          }
+          const { name, target } = data;
+          if (
+            typeof name !== "string" ||
+            !name.trim() ||
+            name.trim().length > 80 ||
+            typeof target !== "number" ||
+            !Number.isFinite(target) ||
+            target < 0.01 ||
+            target > 1e12
+          )
+            throw new HttpError(
+              400,
+              "Enter a goal name and a positive target amount.",
+            );
+          const doc = {
+            userId: owner,
+            name: name.trim(),
+            target: Math.round(target * 100) / 100,
+            saved: 0,
+            createdAt: new Date(),
+          };
+          const result = await collection.insertOne(doc);
+          return json({ ...doc, _id: result.insertedId }, 201);
+        }
+        if (method === "PATCH" && resource === "goals" && resourceId) {
+          if (!ObjectId.isValid(resourceId))
+            throw new HttpError(400, "Invalid goal ID.");
+          const { contribution } = await body(request);
+          if (
+            typeof contribution !== "number" ||
+            !Number.isFinite(contribution) ||
+            contribution < 0.01 ||
+            contribution > 1e12
+          )
+            throw new HttpError(400, "Contribution must be a positive amount.");
+          const goal = await collection.findOneAndUpdate(
+            { _id: new ObjectId(resourceId), userId: owner },
+            { $inc: { saved: Math.round(contribution * 100) / 100 } },
+            { returnDocument: "after" },
+          );
+          if (!goal) throw new HttpError(404, "Goal not found.");
+          return json(goal);
+        }
+        throw new HttpError(405, "Method not supported.");
+      }
       if (
         path === "/api/transactions" ||
         path === "/api/transactions/export" ||
         /^\/api\/transactions\/[^/]+$/.test(path)
       ) {
         const id = userId(request);
-        if (path === "/api/transactions" && method === "POST") {
+        if (
+          (path === "/api/transactions" && method === "POST") ||
+          (method === "PATCH" &&
+            /^\/api\/transactions\/[^/]+$/.test(path) &&
+            path !== "/api/transactions/export")
+        ) {
           const { description, amount, type, category, date } =
             await body(request);
           if (
@@ -183,9 +285,23 @@ export function createApi(database: () => Promise<Db> = connectDB) {
             type,
             category: category || "Other",
             date: date ? new Date(date as string) : new Date(),
-            createdAt: new Date(),
           };
-          const result = await transactions.insertOne(doc);
+          if (method === "PATCH") {
+            const transactionId = path.split("/").at(-1)!;
+            if (!ObjectId.isValid(transactionId))
+              throw new HttpError(400, "Invalid transaction ID.");
+            const updated = await transactions.findOneAndUpdate(
+              { _id: new ObjectId(transactionId), userId: id },
+              { $set: doc },
+              { returnDocument: "after" },
+            );
+            if (!updated) throw new HttpError(404, "Transaction not found.");
+            return json(updated);
+          }
+          const result = await transactions.insertOne({
+            ...doc,
+            createdAt: new Date(),
+          });
           return json({ ...doc, _id: result.insertedId }, 201);
         }
         if (path === "/api/transactions" && method === "GET") {
@@ -259,7 +375,11 @@ export function createApi(database: () => Promise<Db> = connectDB) {
         error.code === 11000
       )
         return json(
-          { error: "An account with this email already exists." },
+          {
+            error: new URL(request.url).pathname.startsWith("/api/budgets")
+              ? "This budget changed elsewhere. Refresh your plans and try again."
+              : "An account with this email already exists.",
+          },
           409,
         );
       // Do not include driver messages or connection strings in responses or logs.

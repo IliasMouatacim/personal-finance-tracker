@@ -34,6 +34,8 @@ import { chromium } from "playwright";
         date: "2026-10-02T00:00:00Z",
       },
     ];
+    let budgets = [];
+    let goals = [];
     let failList = false;
     let registrationFailure = true;
     await page.route("**/api/**", async (route) => {
@@ -50,6 +52,46 @@ import { chromium } from "playwright";
         return route.fulfill({
           json: { token: "browser-fixture-token", email: "test@example.com" },
         });
+      if (/^\/api\/(budgets|goals)/.test(path)) {
+        const type = path.split("/")[2],
+          id = path.split("/")[3];
+        let records = type === "budgets" ? budgets : goals;
+        if (request.method() === "POST") {
+          const data = request.postDataJSON();
+          const existing =
+            type === "budgets"
+              ? records.find(
+                  (x) => x.category === data.category && x.month === data.month,
+                )
+              : null;
+          const item = {
+            ...data,
+            _id: existing ? existing._id : String(Date.now()),
+            ...(type === "goals" ? { saved: 0 } : {}),
+          };
+          records = [...records.filter((x) => x._id !== item._id), item];
+          if (type === "budgets") budgets = records;
+          else goals = records;
+          return route.fulfill({ status: 201, json: item });
+        }
+        if (request.method() === "PATCH") {
+          const goal = goals.find((x) => x._id === id);
+          goal.saved += request.postDataJSON().contribution;
+          return route.fulfill({ json: goal });
+        }
+        if (request.method() === "DELETE") {
+          if (type === "budgets") budgets = budgets.filter((x) => x._id !== id);
+          else goals = goals.filter((x) => x._id !== id);
+          return route.fulfill({ json: { message: "Removed." } });
+        }
+        return route.fulfill({ json: records });
+      }
+      if (request.method() === "PATCH") {
+        const id = path.split("/").at(-1);
+        const updated = { ...request.postDataJSON(), _id: id };
+        transactions = transactions.map((t) => (t._id === id ? updated : t));
+        return route.fulfill({ json: updated });
+      }
       if (path.endsWith("/export"))
         return route.fulfill({
           contentType: "text/csv",
@@ -123,6 +165,44 @@ import { chromium } from "playwright";
       new URL(page.url()).pathname === "/dashboard",
       "Session survives reload",
     );
+    await page
+      .getByRole("button", { name: "Edit Groceries", exact: true })
+      .click();
+    const editor = page.getByRole("dialog");
+    await editor.getByLabel("Description", { exact: true }).fill("Groceries");
+    await editor.getByLabel("Amount ($)").fill("90");
+    await editor.getByRole("button", { name: "Save changes" }).click();
+    await editor.waitFor({ state: "hidden" });
+    assert.equal(
+      transactions.find((t) => t.description === "Groceries").amount,
+      90,
+    );
+    await page.getByLabel("Dashboard month").selectOption("2026-10");
+    await page.getByText("Period net", { exact: true }).waitFor();
+    await page.getByLabel("Dashboard month").selectOption("all");
+    await page.getByLabel("Budget month").fill("2026-10");
+    await page.getByLabel("Budget limit").fill("100");
+    await page
+      .getByRole("button", { name: "Save budget", exact: true })
+      .click();
+    await page.getByText("$10.00 left to spend", { exact: true }).waitFor();
+    await page.getByLabel("Budget limit").fill("80");
+    await page
+      .getByRole("button", { name: "Save budget", exact: true })
+      .click();
+    await page.getByText("$10.00 over budget", { exact: true }).waitFor();
+    await page.getByLabel("Goal name").fill("Dream trip");
+    await page.getByLabel("Goal target").fill("1000");
+    await page
+      .getByRole("button", { name: "Create goal", exact: true })
+      .click();
+    await page.getByLabel("Contribution to Dream trip").fill("100");
+    await page
+      .getByRole("button", { name: "Add savings", exact: false })
+      .click();
+    await page.getByText("$900.00 to go", { exact: true }).waitFor();
+    await page.reload();
+    await page.getByText("$900.00 to go", { exact: true }).waitFor();
     await page.getByRole("searchbox").fill("groceries");
     assert((await page.locator(".transaction-row").count()) === 1);
     await page.getByRole("searchbox").fill("");
@@ -212,7 +292,7 @@ import { chromium } from "playwright";
     await page.waitForURL("**/login");
     assert.deepEqual(errors, [], "No browser runtime errors");
     console.log(
-      "PASS: responsive layouts, registration, session reload, search, filter, add, delete confirmation, export, themes, retry, logout and route guard (mock API).",
+      "PASS: responsive layouts, registration, session reload, monthly filters, editing, budgets, savings goals, search, add, delete confirmation, export, themes, retry, logout and route guard (mock API).",
     );
   } finally {
     await browser.close();

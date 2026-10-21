@@ -8,7 +8,7 @@ const { ObjectId } = require("mongodb");
 // Test the real auth, validation, routing and ownership logic against an
 // isolated database fixture. MongoDB connectivity is a separate deployment check.
 function fixture() {
-  const data = { users: [], transactions: [] };
+  const data = { users: [], transactions: [], budgets: [], goals: [] };
   const matches = (doc, filter) =>
     Object.entries(filter).every(
       ([key, value]) => String(doc[key]) === String(value),
@@ -23,6 +23,23 @@ function fixture() {
           const _id = new ObjectId();
           data[name].push({ ...doc, _id });
           return { insertedId: _id };
+        },
+        updateOne: async (filter, update, options = {}) => {
+          let doc = data[name].find((d) => matches(d, filter));
+          if (!doc && options.upsert) {
+            doc = { ...filter, ...update.$setOnInsert, _id: new ObjectId() };
+            data[name].push(doc);
+          }
+          if (doc) Object.assign(doc, update.$set);
+          return { matchedCount: doc ? 1 : 0 };
+        },
+        findOneAndUpdate: async (filter, update) => {
+          const doc = data[name].find((d) => matches(d, filter));
+          if (!doc) return null;
+          if (update.$set) Object.assign(doc, update.$set);
+          for (const [key, value] of Object.entries(update.$inc || {}))
+            doc[key] = (doc[key] || 0) + value;
+          return { ...doc };
         },
         deleteOne: async (filter) => {
           const i = data[name].findIndex((doc) => matches(doc, filter));
@@ -212,4 +229,162 @@ test("database failures return safe JSON without exposing connection details", a
   const response = await api(new Request("http://test.local/api/health"));
   assert.equal(response.status, 503);
   assert.doesNotMatch(await response.text(), /private-host|password/);
+});
+test("editing transactions preserves ownership and creation date", async () => {
+  const { request, data } = fixture();
+  const register = async (email) =>
+    (
+      await (
+        await request("/auth/register", "POST", {
+          email,
+          password: "fixture-password",
+        })
+      ).json()
+    ).token;
+  const alice = await register("alice@example.com"),
+    bob = await register("bob@example.com");
+  const tx = await (
+    await request(
+      "/transactions",
+      "POST",
+      { description: "Coffee", amount: 4, type: "expense" },
+      alice,
+    )
+  ).json();
+  const created = data.transactions[0].createdAt;
+  const update = {
+    description: "Groceries",
+    amount: 90,
+    type: "expense",
+    category: "Food",
+    date: "2026-10-01",
+  };
+  assert.equal(
+    (await request(`/transactions/${tx._id}`, "PATCH", update, bob)).status,
+    404,
+  );
+  const changed = await request(
+    `/transactions/${tx._id}`,
+    "PATCH",
+    update,
+    alice,
+  );
+  assert.equal(changed.status, 200);
+  assert.equal((await changed.json()).amount, 90);
+  assert.equal(data.transactions[0].createdAt, created);
+  assert.equal(
+    (
+      await request(
+        `/transactions/${tx._id}`,
+        "PATCH",
+        { ...update, amount: -1 },
+        alice,
+      )
+    ).status,
+    400,
+  );
+});
+test("monthly budgets upsert without duplicates and remain private", async () => {
+  const { request } = fixture();
+  const register = async (email) =>
+    (
+      await (
+        await request("/auth/register", "POST", {
+          email,
+          password: "fixture-password",
+        })
+      ).json()
+    ).token;
+  const alice = await register("alice@example.com"),
+    bob = await register("bob@example.com");
+  const payload = { category: "Food", month: "2026-10", limit: 100 };
+  const budget = await (
+    await request("/budgets", "POST", payload, alice)
+  ).json();
+  assert.equal(
+    (await request("/budgets", "POST", { ...payload, limit: 80 }, alice))
+      .status,
+    201,
+  );
+  const list = await (
+    await request("/budgets", "GET", undefined, alice)
+  ).json();
+  assert.equal(list.length, 1);
+  assert.equal(list[0].limit, 80);
+  assert.deepEqual(
+    await (await request("/budgets", "GET", undefined, bob)).json(),
+    [],
+  );
+  assert.equal(
+    (await request(`/budgets/${budget._id}`, "DELETE", undefined, bob)).status,
+    404,
+  );
+  assert.equal(
+    (await request("/budgets", "POST", { ...payload, month: "2026-13" }, alice))
+      .status,
+    400,
+  );
+  assert.equal(
+    (await request(`/budgets/${budget._id}`, "DELETE", undefined, alice))
+      .status,
+    200,
+  );
+});
+test("savings goals record contributions privately without creating transactions", async () => {
+  const { request, data } = fixture();
+  const register = async (email) =>
+    (
+      await (
+        await request("/auth/register", "POST", {
+          email,
+          password: "fixture-password",
+        })
+      ).json()
+    ).token;
+  const alice = await register("alice@example.com"),
+    bob = await register("bob@example.com");
+  const goal = await (
+    await request("/goals", "POST", { name: "Dream trip", target: 1000 }, alice)
+  ).json();
+  assert.equal(goal.saved, 0);
+  assert.equal(
+    (await request(`/goals/${goal._id}`, "PATCH", { contribution: 100 }, bob))
+      .status,
+    404,
+  );
+  assert.equal(
+    (
+      await (
+        await request(
+          `/goals/${goal._id}`,
+          "PATCH",
+          { contribution: 100 },
+          alice,
+        )
+      ).json()
+    ).saved,
+    100,
+  );
+  assert.equal(
+    (await request(`/goals/${goal._id}`, "PATCH", { contribution: -50 }, alice))
+      .status,
+    400,
+  );
+  assert.equal(
+    (await (await request("/goals", "GET", undefined, alice)).json())[0].saved,
+    100,
+  );
+  assert.equal(data.transactions.length, 0);
+  assert.deepEqual(
+    await (await request("/goals", "GET", undefined, bob)).json(),
+    [],
+  );
+  assert.equal(
+    (await request(`/goals/${goal._id}`, "DELETE", undefined, bob)).status,
+    404,
+  );
+  assert.equal(
+    (await request(`/goals/${goal._id}`, "DELETE", undefined, alice)).status,
+    200,
+  );
 });
